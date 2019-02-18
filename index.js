@@ -5,7 +5,8 @@ const
   express = require('express'),
   bodyParser = require('body-parser'),
   app = express().use(bodyParser.json()); // creates express http server
-
+const request = require('request');
+const PAGE_ACCESS_TOKEN = 'EAAJbJx9SGZA8BAJMXa9e4drcjX1b6LOQkpzftnVYvWtirzyC63ThxPJQqgZCCIbN1h2sG8hioS3x3HgY6jqaAVHxTztkfwARyMTST4BZBdFlSpZA8yzXveHeyh0VTDyh1wfZAmiSMtJx1GOZBdEcTr6ZBy5TdIePjzeLGD9j6OxZAjHguSIdyFv3';
 // Sets server port and logs message on success
 app.listen(process.env.PORT || 3000, () => console.log('webhook is listening'));
 
@@ -66,3 +67,44 @@ app.get('/webhook', (req, res) => {
     }
   }
 });
+
+function handleMessage(sender_psid, received_message) {
+
+  let response;
+
+  // Check if the message contains text
+  if (received_message.text) {    
+
+    // Create the payload for a basic text message
+    response = {
+      "text": `You sent the message: "${received_message.text}". Now send me an image!`
+    }
+  }  
+  
+  // Sends the response message
+  callSendAPI(sender_psid, response);    
+}
+
+function callSendAPI(sender_psid, response) {
+  // Construct the message body
+  let request_body = {
+    "recipient": {
+      "id": sender_psid
+    },
+    "message": response
+  }
+
+  // Send the HTTP request to the Messenger Platform
+  request({
+    "uri": "https://graph.facebook.com/v2.6/me/messages",
+    "qs": { "access_token": PAGE_ACCESS_TOKEN },
+    "method": "POST",
+    "json": request_body
+  }, (err, res, body) => {
+    if (!err) {
+      console.log('message sent!')
+    } else {
+      console.error("Unable to send message:" + err);
+    }
+  }); 
+}
